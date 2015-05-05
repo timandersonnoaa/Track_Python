@@ -25,7 +25,7 @@ Option 3: Specify the start point with simulated map.
 Option 4: Area(box) track.          
 '''
 ######## Hard codes ##########
-Option = 1 # 1,2,3
+Option = 1 # 1,2,3 here is the change
 print 'Option %d'%Option
 MODEL = 'FVCOM'      # 'FVCOM', 'ROMS'
 GRID = 'massbay'     # Apply to FVCOM. '30yr', 'massbaya', 'GOM3a', 'GOM3' or 'massbay'

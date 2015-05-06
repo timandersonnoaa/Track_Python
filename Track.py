@@ -25,11 +25,11 @@ Option 3: Specify the start point with simulated map.
 Option 4: Area(box) track.          
 '''
 ######## Hard codes ##########
-Option = 1 # 1,2,3 here is the
+Option = 4 # 1,2,3
 print 'Option %d'%Option
-MODEL = 'FVCOM'      # 'FVCOM', 'ROMS'
-GRID = 'massbay'     # Apply to FVCOM. '30yr', 'massbaya', 'GOM3a', 'GOM3' or 'massbay'
-depth = -15
+MODEL = 'FVCOM'     # 'FVCOM', 'ROMS'
+GRID = 'massbay'    # Apply to FVCOM. '30yr', 'massbaya:10 layers', 'GOM3a', 'GOM3:40 layers' or 'massbay'
+depth = -1
 track_days = 1      #MODEL track time(days)
 track_way = 'forward'    # Three options: backward, forward and both. 'both' only apply to Option 2 and 3.
 image_style = 'animation'      # Two option: 'plot', animation
@@ -281,6 +281,7 @@ if Option==2 or Option==3:
                                
 #####################Option 4 ########################
 if Option==4:
+    image_style = 'animation'
     hitland = 0; onland = 0
     stp_num = len(st_lat)
     lon_set = [[]]*stp_num; lat_set = [[]]*stp_num;
@@ -294,13 +295,11 @@ if Option==4:
     if MODEL=='FVCOM':            
         get_obj = get_fvcom(GRID)
         url_fvcom = get_obj.get_url(start_time,end_time)
-        lons,lats,lonc,latc,b_index,h,siglay = get_obj.get_data(url_fvcom)# b_points is model boundary points.        
-        if model_boundary_swicth=='ON': # b_points is model boundary points.
-            lonb = lonc[b_index]; latb = latc[b_index]        
-            b_points = np.vstack((lonb.flatten(),latb.flatten())).T
+        b_points = get_obj.get_data(url_fvcom)# b_points is model boundary points.        
+        
         for i in range(stp_num):
             print 'Running the %dth of %d drifters.'%(i+1,stp_num)
-            point,nu = get_obj.get_track(st_lon[i],st_lat[i],lons,lats,lonc,latc,h,siglay,depth,track_way)
+            point,nu = get_obj.get_track(st_lon[i],st_lat[i],depth,track_way)
             #point,nu = get_obj.get_track(st_lon[i],st_lat[i],lonc,latc,u,v,b_points,track_way)
             lon_set[i] = point['lon']; lat_set[i] = point['lat']
             loop_length.append(len(point['lon']))
@@ -319,26 +318,46 @@ if Option==4:
     if model_boundary_swicth=='ON':
         po = b_points.T
         ax.plot(po[0],po[1],'bo',markersize=3)
+    if streamline == 'ON':
+        lonpps,latpps,US,VS,speeds = get_obj.streamlinedata(points,depth,track_way)
+        np.savez('streamline.npz',lonpps=lonpps,latpps=latpps,US=US,VS=VS,speeds=speeds)
     
-    ######################### Plot #######################################    
-    image_style = 'animation'
-    draw_basemap(ax, points)  # points is using here
+    ######################### Plot #######################################       
+    
     colors=uniquecolors(stp_num) #config colors
-    plt.title('%.f%% simulated drifters ashore\n%d days, %d m, %s'%
+    plt.suptitle('%.f%% simulated drifters ashore\n%d days, %d m, %s'%
               (int(round(p)),track_days,depth,start_time.strftime("%d-%b-%Y")))
-    def animate(n): #del ax.collections[:]; del ax.lines[:]; ax.cla(); ax.lines.remove(line)        
-        del ax.lines[:]        
-        for j in xrange(stp_num):
-            ax.plot(lon_set[j][0],lat_set[j][0],color=colors[j],marker='x',markersize=4)
-            if n>=len(lon_set[j]):
-                ax.plot(lon_set[j][-1],lat_set[j][-1],'o',color=colors[j],markersize=5)
-            if n<5:                
-                if n<len(lon_set[j]):
-                    ax.plot(lon_set[j][:n+1],lat_set[j][:n+1],'o-',color=colors[j],markersize=4)#,label='Depth=10m'            
-            if n>=5:
-                if n<len(lon_set[j]):
-                    ax.plot(lon_set[j][n-4:n+1],lat_set[j][n-4:n+1],'o-',color=colors[j],markersize=4)
-    anim = animation.FuncAnimation(fig, animate, frames=max(loop_length)) #, interval=50
+    if streamline == 'ON':
+        def animate(n): #del ax.collections[:]; del ax.lines[:]; ;
+            ax.cla()
+            draw_basemap(ax, points)  # points is using here
+            for j in xrange(stp_num):
+                ax.plot(lon_set[j][0],lat_set[j][0],color=colors[j],marker='x',markersize=4)
+                if n>=len(lon_set[j]):
+                    ax.plot(lon_set[j][-1],lat_set[j][-1],'o',color=colors[j],markersize=5)
+                if n<5:                
+                    if n<len(lon_set[j]):
+                        ax.plot(lon_set[j][:n+1],lat_set[j][:n+1],'o-',color=colors[j],markersize=4)#,label='Depth=10m'            
+                if n>=5:
+                    if n<len(lon_set[j]):
+                        ax.plot(lon_set[j][n-4:n+1],lat_set[j][n-4:n+1],'o-',color=colors[j],markersize=4)
+        anim = animation.FuncAnimation(fig, animate, frames=max(loop_length)) #, interval=50        
+    
+    else:
+        draw_basemap(ax, points)  # points is using here
+        def animate(n): #del ax.collections[:]; del ax.lines[:]; ax.cla(); ax.lines.remove(line)        
+            del ax.lines[:]        
+            for j in xrange(stp_num):
+                ax.plot(lon_set[j][0],lat_set[j][0],color=colors[j],marker='x',markersize=4)
+                if n>=len(lon_set[j]):
+                    ax.plot(lon_set[j][-1],lat_set[j][-1],'o',color=colors[j],markersize=5)
+                if n<5:                
+                    if n<len(lon_set[j]):
+                        ax.plot(lon_set[j][:n+1],lat_set[j][:n+1],'o-',color=colors[j],markersize=4)#,label='Depth=10m'            
+                if n>=5:
+                    if n<len(lon_set[j]):
+                        ax.plot(lon_set[j][n-4:n+1],lat_set[j][n-4:n+1],'o-',color=colors[j],markersize=4)
+        anim = animation.FuncAnimation(fig, animate, frames=max(loop_length)) #, interval=50
     
 ##################################### The End ##########################################
 en_run_time = datetime.now()

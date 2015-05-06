@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Dec 10 15:54:43 2014
-This now generates an animation if requested.
-This project plots both the drifter track and forcast track for the last three days and forecasts 
-the drifter track for the next two days. 
+This routine can plot both the observed and modeled drifter tracks.
+It has various options including how to specify start positions, how long to track, 
+whether to generate animation output, etc. See Readme.
 @author: Bingwei Ling
 Derived from previous particle tracking work by Manning, Muse, Cui, Warren.
 """
@@ -17,9 +17,9 @@ from makegrid import clickmap, points_between, points_square,extend_square
 from track_functions import get_drifter,get_fvcom,get_roms,draw_basemap,uniquecolors
 from matplotlib import animation
 st_run_time = datetime.now() # Caculate execution time with en_run_time
-############################### Options #######################################
+############################### Options on how to select start positions #######################################
 '''
-Option 1: Drifter track.
+Option 1: Use the last point in the drifter track.
 Option 2: Specify the start point.
 Option 3: Specify the start point with simulated map.
 Option 4: Area(box) track.          

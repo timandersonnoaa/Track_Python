@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Dec 10 15:54:43 2014
-Derived from previous particle tracking work by Manning, Muse, Cui, Warren.
 This now generates an animation if requested.
 This project plots both the drifter track and forcast track for the last three days and forecasts 
 the drifter track for the next two days. 
-@author: bling
+@author: Bingwei Ling
+Derived from previous particle tracking work by Manning, Muse, Cui, Warren.
 """
 
 import sys

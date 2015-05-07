@@ -68,7 +68,6 @@ def points_between(st_point,en_point,x):
     returns lat0,lono
     """
     
-    #print st_point,en_point
     lato=[]
     lono=[]
     if not st_point: 
@@ -82,5 +81,32 @@ def points_between(st_point,en_point,x):
     for j in range(x+2):
         lato.append(st_point[0]+lati*j)
         lono.append(st_point[1]+loni*j)
+    
     return lato,lono
+    
+def points_square(point, hside_length):
+    '''point = (lat,lon); length: units is decimal degrees.
+       return a squre points(lats,lons) on center point'''
+    (lat,lon) = point; length =float(hside_length)
+    lats=[lat]; lons=[lon]
+    bbox = [lon-length, lon+length, lat-length, lat+length]
+    bbox = np.array(bbox)
+    points = np.array([bbox[[0,1,1,0]],bbox[[2,2,3,3]]])
+    lats.extend(points[1]); lons.extend(points[0])
+    
+    return lats,lons
 
+def extend_square(point, radius,num):
+    '''point = (lat,lon); length: units is decimal degrees.
+       return a squre points(lats,lons) on center point'''
+    (lat,lon) = point; 
+    lats=[lat]; lons=[lon]
+    length =float(radius)/(num+1)
+    for i in xrange(num+1):
+        lth = length*(i+1)
+        bbox = [lon,lon-lth,lon+lth,lat,lat-lth,lat+lth]
+        bbox = np.array(bbox)
+        points = np.array([bbox[[1,2,2,1,1,2,0,0]],bbox[[4,4,5,5,3,3,4,5]]])
+        lats.extend(points[1]); lons.extend(points[0])
+
+    return lats,lons

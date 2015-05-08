@@ -620,13 +620,13 @@ class get_fvcom(track):
         elif self.modelname is "30yr": #start at 1977/12/31 22:58, end at 2014/1/1 0:0, time units:hours
             url = """http://www.smast.umassd.edu:8080/thredds/dodsC/fvcom/hindcasts/30yr_gom3?h[0:1:48450],
             lat[0:1:48450],latc[0:1:90414],lon[0:1:48450],lonc[0:1:90414],nbe[0:1:2][0:1:90414],
-            siglay[0:1:44][0:1:48450],nv[0:1:2][0:1:90414]"""
-            urll = """http://www.smast.umassd.edu:8080/thredds/dodsC/fvcom/hindcasts/30yr_gom3?u[{0}:1:{1}][0:1:44][0:1:90414],
+            siglay[0:1:44][0:1:48450],nv[0:1:2][0:1:90414],u[{0}:1:{1}][0:1:44][0:1:90414],
             v[{0}:1:{1}][0:1:44][0:1:90414],zeta[{0}:1:{1}][0:1:48450]"""
             index1 = int(round((starttime-datetime(1977,12,31,22,58,4,0,pytz.UTC)).total_seconds()/3600))
             index2 = index1 + self.hours
-            self.url = urll.format(index1, index2)
-        #print url
+            url = url.format(index1, index2)
+            self.url = url
+        
         return url
 
     def get_data(self,url):

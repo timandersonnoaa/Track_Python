@@ -8,36 +8,36 @@ whether to generate animation output, etc. See Readme.
 Derived from previous particle tracking work by Manning, Muse, Cui, Warren.
 """
 
-import sys
+#import sys
 import pytz
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-from makegrid import clickmap, points_between, points_square,extend_square
-from track_functions import get_drifter,get_fvcom,get_roms,draw_basemap,uniquecolors
+from track_functions import get_drifter,get_fvcom,get_roms,draw_basemap,uniquecolors,clickmap, points_between, points_square,extend_square
 from matplotlib import animation
+
 st_run_time = datetime.now() # Caculate execution time with en_run_time
-############################### Options on how to select start positions #######################################
+############################### Options #######################################
 '''
-Option 1: Use the last point in the drifter track.
+Option 1: Drifter track.
 Option 2: Specify the start point.
 Option 3: Specify the start point with simulated map.
 Option 4: Area(box) track.          
 '''
 ######## Hard codes ##########
-Option = 4 # 1,2,3
+Option = 3 # 1,2,3,4
 print 'Option %d'%Option
 MODEL = 'FVCOM'     # 'FVCOM', 'ROMS'
 GRID = 'massbay'    # Apply to FVCOM. '30yr', 'massbaya:10 layers', 'GOM3a', 'GOM3:40 layers' or 'massbay'
-depth = -1
+depth = -15
 track_days = 1      #MODEL track time(days)
 track_way = 'forward'    # Three options: backward, forward and both. 'both' only apply to Option 2 and 3.
 image_style = 'animation'      # Two option: 'plot', animation
 # You can track form now by specify start_time = datetime.now(pytz.UTC) 
-start_time = datetime(2015,5,5,12,45,0,0,pytz.UTC)#datetime.now(pytz.UTC) 
+start_time = datetime(2015,5,8,12,45,0,0,pytz.UTC)#datetime.now(pytz.UTC) 
 end_time = start_time + timedelta(track_days)
-model_boundary_swicth = 'ONa' # OFF or ON. Only apply to FVCOM
-streamline = 'ON'
+model_boundary_swicth = 'OFF' # OFF or ON. Only apply to FVCOM
+streamline = 'OFF'
 save_dir = '/home/bling/Documents/Results/'
 
 ################################## Option ####################################
@@ -146,7 +146,7 @@ if Option == 1:
                                 dr_points['lat'][-1]+0.01*track_days),fontsize=6,arrowprops=dict(arrowstyle="fancy"))
                 ax.plot(model_points['lon'][:n+1],model_points['lat'][:n+1],'ro-',markersize=6,label=MODEL)
                 draw_basemap(ax, points)  # points is using here
-            anim = animation.FuncAnimation(fig, animate, frames=max(loop_length))#, interval=250        
+            anim = animation.FuncAnimation(fig, animate, frames=max(loop_length), interval=1000)#        
             plt.clim(vmin=0, vmax=1)
             plt.colorbar()
             
@@ -157,7 +157,7 @@ if Option == 1:
                         dr_points['lat'][-1]+0.01*track_days),fontsize=6,arrowprops=dict(arrowstyle="fancy"))
             def animate(n): # the function of the animation
                 ax.plot(model_points['lon'][:n+1],model_points['lat'][:n+1],'ro-',markersize=6,label=MODEL)
-            anim = animation.FuncAnimation(fig, animate, frames=max(loop_length)) #, interval=50
+            anim = animation.FuncAnimation(fig, animate, frames=max(loop_length), interval=250) #
 
 #####################Option 2|3 ########################
 if Option==2 or Option==3:
@@ -265,7 +265,7 @@ if Option==2 or Option==3:
                     if n<len(lon_set[j]): #markerfacecolor='r',
                         ax.plot(lon_set[j][:n+1],lat_set[j][:n+1],'o-',color=colors[j],markersize=4,label='Start %d'%(j+1))
                 draw_basemap(ax, points)  # points is using here
-            anim = animation.FuncAnimation(fig, animate, frames=max(loop_length))#, interval=250        
+            anim = animation.FuncAnimation(fig, animate, frames=max(loop_length), interval=1000)#        
             plt.clim(vmin=0, vmax=1)
             plt.colorbar()
         else:
@@ -277,7 +277,7 @@ if Option==2 or Option==3:
                                     lat_set[j][0]+0.01*stp_num),fontsize=6,arrowprops=dict(arrowstyle="fancy")) 
                     if n<len(lon_set[j]): #markerfacecolor='r',
                         ax.plot(lon_set[j][:n+1],lat_set[j][:n+1],'o-',color=colors[j],markersize=4,label='Start %d'%(j+1))
-                anim = animation.FuncAnimation(fig, animate, frames=max(loop_length))
+                anim = animation.FuncAnimation(fig, animate, frames=max(loop_length), interval=250)
                                
 #####################Option 4 ########################
 if Option==4:
@@ -341,7 +341,7 @@ if Option==4:
                 if n>=5:
                     if n<len(lon_set[j]):
                         ax.plot(lon_set[j][n-4:n+1],lat_set[j][n-4:n+1],'o-',color=colors[j],markersize=4)
-        anim = animation.FuncAnimation(fig, animate, frames=max(loop_length)) #, interval=50        
+        anim = animation.FuncAnimation(fig, animate, frames=max(loop_length), interval=1000) #        
     
     else:
         draw_basemap(ax, points)  # points is using here
@@ -357,7 +357,7 @@ if Option==4:
                 if n>=5:
                     if n<len(lon_set[j]):
                         ax.plot(lon_set[j][n-4:n+1],lat_set[j][n-4:n+1],'o-',color=colors[j],markersize=4)
-        anim = animation.FuncAnimation(fig, animate, frames=max(loop_length)) #, interval=50
+        anim = animation.FuncAnimation(fig, animate, frames=max(loop_length),interval=250) #, 
     
 ##################################### The End ##########################################
 en_run_time = datetime.now()
@@ -369,5 +369,5 @@ if image_style=='plot':
                 dpi=400,bbox_inches='tight')
 if image_style=='animation':#ffmpeg,imagemagick,mencoder fps=20'''
     anim.save(save_dir+'%s-%s_%s.gif'%(MODEL,track_way,en_run_time.strftime("%d-%b-%Y_%H:%M")),
-              writer='imagemagick',fps=1,dpi=250) #,,
+              writer='imagemagick',dpi=250) #,,,fps=1
 plt.show()

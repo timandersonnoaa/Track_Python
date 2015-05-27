@@ -487,9 +487,9 @@ class get_fvcom(track):
             
     def nearest_point_index(self, lon, lat, lons, lats,rad):  #,num=4
         '''
-        Return the index of the nearest rho point.
+        Return the nearest point(lonp,latp) and distance to origin point(lon,lat).
         lon, lat: the coordinate of start point, float
-        lats, lons: the coordinate of points to be calculated.
+        latp, lonp: the coordinate of points to be calculated.
         '''
         def bbox2ij(lon, lat, lons, lats, rad):  
             """
@@ -539,7 +539,7 @@ class get_fvcom(track):
             p = dis_set.index(dis)
             lonp = lons[p]; latp = lats[p]
             return lonp,latp,dis       
-        index = bbox2ij(lon, lat, lons, lats,0.1)
+        index = bbox2ij(lon, lat, lons, lats,rad)
         lon_covered = lons[index];  lat_covered = lats[index]       
         lonp,latp,distance = min_distance(lon,lat,lon_covered,lat_covered)
         #index1 = np.where(lons==lonp)
@@ -814,8 +814,12 @@ class get_fvcom(track):
         lonl,latl = self.shrink_data(lon,lat,self.lonc,self.latc,0.5)
         lonk,latk = self.shrink_data(lon,lat,self.lons,self.lats,0.5)
         try:
-            lonp,latp,distance = self.nearest_point_index(lon, lat, lonl, latl, 0.04)
-            lonn,latn,ds = self.nearest_point_index(lon,lat,lonk,latk,0.06)        
+            if self.modelname == "GOM3" or self.modelname == "30yr":
+                lonp,latp,distance = self.nearest_point_index(lon, lat, lonl, latl,0.2)
+                lonn,latn,ds = self.nearest_point_index(lon,lat,lonk,latk,0.3)
+            if self.modelname == "massbay":
+                lonp,latp,distance = self.nearest_point_index(lon, lat, lonl, latl,0.03)
+                lonn,latn,ds = self.nearest_point_index(lon,lat,lonk,latk,0.05)        
             index1 = np.where(self.lonc==lonp)
             index2 = np.where(self.latc==latp)
             elementindex = np.intersect1d(index1,index2)
@@ -900,8 +904,12 @@ class get_fvcom(track):
             lon = temlon; lat = temlat
             #if i!=(t-1):                
             try:
-                lonp,latp,distance = self.nearest_point_index(lon, lat, lonl, latl, 0.04)
-                lonn,latn,ds = self.nearest_point_index(lon,lat,lonk,latk,0.06)
+                if self.modelname == "GOM3" or self.modelname == "30yr":
+                    lonp,latp,distance = self.nearest_point_index(lon, lat, lonl, latl,0.2)
+                    lonn,latn,ds = self.nearest_point_index(lon,lat,lonk,latk,0.3)
+                if self.modelname == "massbay":
+                    lonp,latp,distance = self.nearest_point_index(lon, lat, lonl, latl,0.03)
+                    lonn,latn,ds = self.nearest_point_index(lon,lat,lonk,latk,0.05)
                 index1 = np.where(self.lonc==lonp)
                 index2 = np.where(self.latc==latp)
                 elementindex = np.intersect1d(index1,index2);#print 'elementindex',elementindex

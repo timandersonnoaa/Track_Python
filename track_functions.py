@@ -1,6 +1,7 @@
 import sys
 import netCDF4
-import calendar
+#import calendar
+import matplotlib.pyplot as plt
 from datetime import datetime,timedelta
 import numpy as np
 import pandas as pd
@@ -626,7 +627,7 @@ class get_fvcom(track):
             index2 = index1 + self.hours
             url = url.format(index1, index2)
             self.url = url
-        
+        #print url
         return url
 
     def get_data(self,url):
@@ -743,6 +744,7 @@ class get_fvcom(track):
             return path
     
     def streamlinedata(self,nodes,depth,track_way):
+        
         lonpps,latpps,US,VS,speeds = [],[],[],[],[]
         uvz = netCDF4.Dataset(self.url)
         u = uvz.variables['u']; v = uvz.variables['v']; zeta = uvz.variables['zeta']
@@ -765,8 +767,13 @@ class get_fvcom(track):
             print 'Streamline the %dth of %d points.'%(i+1,t)
             for j in xrange(len(latss)):
                 try:
-                    lonpp,latpp,dex = self.nearest_point_index(lonss[j],latss[j],lonll,latll,0.03)
-                    lonn,latn,ds = self.nearest_point_index(lonss[j],latss[j],lonk,latk,0.06)
+                    if self.modelname == "GOM3" or self.modelname == "30yr":
+                        lonpp,latpp,dex = self.nearest_point_index(lonss[j],latss[j],lonll,latll,0.2)
+                        lonn,latn,ds = self.nearest_point_index(lonss[j],latss[j],lonk,latk,0.3)
+                    if self.modelname == "massbay":
+                        lonpp,latpp,dex = self.nearest_point_index(lonss[j],latss[j],lonll,latll,0.03)
+                        lonn,latn,ds = self.nearest_point_index(lonss[j],latss[j],lonk,latk,0.05)
+                    
                     index11 = np.where(self.lonc==lonpp)
                     index22 = np.where(self.latc==latpp)
                     index00 = np.intersect1d(index11,index22); #print index00
@@ -1189,19 +1196,104 @@ def uniquecolors(N):
     colors =  [colorsys.hsv_to_rgb(x*1.0/N, 0.5, 0.5) for x in range(N)]
     return colors
 
-'''def extract_drifter_point(drifter_ID,INPUT_DATA,start_time,days):
-    drifter = get_drifter(drifter_ID, INPUT_DATA)
-    point = drifter.get_track(start_time,days)
-    return point
-def extract_fvcom_point(start_time, end_time, st_lon, st_lat,GRID,track_way):       
-    #DEPTH = -1
-    get_obj = get_fvcom(GRID)
-    url_fvcom = get_obj.get_url(start_time,end_time)
-    point = get_obj.get_track(st_lon,st_lat,url_fvcom,track_way)#,DEPTH
-    return point
-def extract_roms_point(start_time, end_time, st_lon,st_lat,track_way):
-    #DEPTH = -1
-    get_obj = get_roms()
-    url_roms = get_obj.get_url(start_time,end_time)
-    point = get_obj.get_track(st_lon,st_lat,url_roms,track_way)#,DEPTH
-    return point #'''
+def basemap_region(region):
+    path="" # Y:/bathy/"#give the path if these data files are store elsewhere
+    #if give the region, choose the filename
+    if region=='sne':
+        filename='sne_coast.dat'
+    if region=='cc':
+        filename='capecod_outline.dat'
+    if region=='bh':
+        filename='bostonharbor_coast.dat'
+    if region=='cb':
+        filename='cascobay_coast.dat'
+    if region=='pb':
+        filename='penbay_coast.dat'
+    if region=='ma': # mid-atlantic
+        filename='necscoast_noaa.dat'
+    if region=='ne': # northeast
+        filename='necoast_noaa.dat'   
+    if region=='wv': # world vec
+        filename='necscoast_worldvec.dat'        
+    
+    #open the data
+    f=open(path+filename)
+
+    lon,lat=[],[]
+    for line in f:#read the lat, lon
+	    lon.append(line.split()[0])
+	    lat.append(line.split()[1])
+    nan_location=[]
+    # plot the lat,lon between the "nan"
+    for i in range(len(lon)):#find "nan" location
+        if lon[i]=="nan":
+            nan_location.append(i)
+
+    for m in range(1,len(nan_location)):#plot the lat,lon between nan
+        lon_plot,lat_plot=[],[]
+        for k in range(nan_location[m-1],nan_location[m]):
+            lat_plot.append(lat[k])
+            lon_plot.append(lon[k])
+        plt.plot(lon_plot,lat_plot,'r') 
+
+def clickmap(n):
+   # this allows users to click on a rough map and define lat/lon points
+   # where "n" is the number of points
+   fig=plt.figure()
+   basemap_region('cc')
+   pt=fig.ginput(n)
+   plt.close('all')
+   lon=list(zip(*pt)[0])
+   lat=list(zip(*pt)[1])
+   return lon,lat
+
+def points_between(st_point,en_point,x):
+    """ 
+    For 2 positions, interpolate X number of points between them
+    where "lat" and "lon" are two element list
+    "x" is the number of points wanted between them
+    returns lat0,lono
+    """
+    
+    lato=[]
+    lono=[]
+    if not st_point: 
+        lato.append(en_point[0]); lono.append(en_point[1])
+        return lato,lono
+    if not en_point: 
+        lato.append(st_point[0]); lono.append(st_point[1])
+        return lato,lono
+    lati=(en_point[0]-st_point[0])/float(x+1)
+    loni=(en_point[1]-st_point[1])/float(x+1)
+    for j in range(x+2):
+        lato.append(st_point[0]+lati*j)
+        lono.append(st_point[1]+loni*j)
+    
+    return lato,lono
+    
+def points_square(point, hside_length):
+    '''point = (lat,lon); length: units is decimal degrees.
+       return a squre points(lats,lons) on center point'''
+    (lat,lon) = point; length =float(hside_length)
+    lats=[lat]; lons=[lon]
+    bbox = [lon-length, lon+length, lat-length, lat+length]
+    bbox = np.array(bbox)
+    points = np.array([bbox[[0,1,1,0]],bbox[[2,2,3,3]]])
+    lats.extend(points[1]); lons.extend(points[0])
+    
+    return lats,lons
+
+def extend_square(point, radius,num):
+    '''point = (lat,lon); length: units is decimal degrees.
+       return a squre points(lats,lons) on center point'''
+    (lat,lon) = point; 
+    lats=[lat]; lons=[lon]
+    length =float(radius)/(num+1)
+    for i in xrange(num+1):
+        lth = length*(i+1)
+        bbox = [lon,lon-lth,lon+lth,lat,lat-lth,lat+lth]
+        bbox = np.array(bbox)
+        points = np.array([bbox[[1,2,2,1,1,2,0,0]],bbox[[4,4,5,5,3,3,4,5]]])
+        lats.extend(points[1]); lons.extend(points[0])
+
+    return lats,lons
